@@ -1,0 +1,1642 @@
+https://leetcode.com/discuss/general-discussion/1122034/important-graph-algorithm-notes-for-interview
+
+---
+
+### VARIOUS TIME COMPLEXITIES IN GRAPH
+
+→ v = nodes,  e = edges,  e = v^2
+
+→ BFS                            O (v + e)
+
+→ DFS                           O (v + e)
+
+→ Topological sort        O (v+ e)
+
+→ Dijkstra’s                   O(E log E) = O(E log V^2) = O(E*2 log v) = O(ElogV)
+
+→ Bellman Ford            O (ve)
+
+→ Floyd Warshall          O (v^3)
+
+→ Prims Algo                O (e log v)
+
+→ Kruskal Algo             O (e log e)
+
+→ Kosaraju Algo           O (v+ e)
+
+---
+
+In using recursion in graph alogrithm, We usually dont need base case because loop through the neighbours acts as a base case.
+
+---
+
+### Storing Graphs → Methods
+
+- two ways to create adjacency list (equivalent)
+1. vector<vector<int>> adj(n);       // vector of vector
+2. vector<int> adj[n];                     // array containing vectors
+    
+    3.vector<pair<int,int> > adj[n];     // directed weighted graphs.
+        for(int i = 0; i < m; i++){
+            adj[edge[i][0]].push_back({edge[i][1], edge[i][2]});
+            adj[edge[i][1]].push_back({roads[i][0], edge[i][2]});
+        }
+    
+
+- Dont use hashMap instead of vector for storing visited array even it seems hash map will save space(when data is sparse). Using hashmap will give TLE.
+    
+    ex:-  use vector instead of hashmap.
+    
+    vector<int> visited(100000, 0);
+    
+
+---
+
+### Steps in bfs and dfs Traversal ( way to remember)
+
+- create data structure, initialize, pop and push neighbor.
+
+[BFS DFS TRAVERSAL.pdf](https://prod-files-secure.s3.us-west-2.amazonaws.com/8416e69f-bcd7-4eb5-802c-498d0dda4d36/f2f7a1a1-97f7-452e-8f41-bdfb971383da/BFS_DFS_TRAVERSAL.pdf)
+
+---
+
+### Connected Components Code
+
+This code may be used anywhere where it is needed(disconnected component).
+
+```cpp
+...
+for(int i = 0; i < v; i++){
+		if(!visited[i]){
+				// DO BFS OR DFS
+		}
+}
+```
+
+---
+
+# Graph Traversal
+
+- REMEMBER: self node is present in adj matrix.
+- Also sometimes we need parent in using some condition. In traversal, visited array take cares we are not going back to parent.
+- In directed graph, traversal is similar to undirected. But there could be self loop or loop to the parent. In adjaceny list, there could be same node as neighbour(self loop) which is not in the case of undirected graph.
+- Also in adjacency Matrix, in undirected graph → self loop may be there which is trivial, but in directed graph self loop is not trival.
+- we either use loop before bfs or dfs to visit all  components or we initalise from a particular node. We choose one according to the question
+
+### 1. BFS Trasveral
+
+→ It is like layerwise (equal distance from root forms a layer) trasversal. Traversal order of nodes in the same layer doesn’t matter.
+
+→ Can be used for finding shortest path in unit/equal weight graphs.
+
+Remember 2 times visited checking
+
+```cpp
+/*
+Time Complexity -> O(V+2E)   Space Complexity ->O(3*N)
+Approach: we will need 3 data structures -> visited, bfs_output and a queue.
+Call bfs algo on all the unvisited node(separate component) by iteration.
+In bfs algo, first push the root to the queue. anything pushed to the queue is doomed to be visited.
+Hence, just after pushing anything to the queue, mark it as visited.
+Also send the front to result, push their neighbours to the queue (and marked them visited bcz
+are doomed to be in bfs_output.
+*/
+
+// Remember Checking visited everytime you push.
+vector<int> bfsTraversal(int v, vector<vector<int>> &adj){
+    
+    // 3 data strutures required.
+    vector<int> bfs_output;
+    vector<int> visited(v,0);
+		queue<int> q;
+    
+    // visiting all the connected components
+    for(int i = 0; i < v; i++){
+
+         if(!visited[i]){
+            // trasversal of single connected components with i node
+				    q.push(i);
+				    visited[i] = 1;
+				                
+				    while(!q.empty()){
+				        int temp = q.front();
+				        q.pop();                      // POP STEP
+				        bfs_output.push_back(temp);
+
+                // for adjacency_list
+				        for(auto it: adj[temp]){
+				            if(!visited[it]){
+				                q.push(it);           // PUSH STEP
+				                visited[it] = 1;
+				            }
+				        }
+								
+                // for adjacency matirx this is good
+								// no need to writek != node in condition because we have already mark it visited and then only we are checking neighbours.
+                // for(int k = 0; k < adj_mat[temp].size(); k++){
+                //     if(adj_mat[temp][k] == 1 && !visited[k]){
+                //         q.push(k);
+                //         visited[k] = 1;
+                //     }
+                // }
+							
+
+				    }
+        }
+     }
+
+    return bfs_output;
+}
+```
+
+---
+
+### 2. DFS Traversal
+
+→ Want to find end points at the max depth possible first.
+
+→ May be used to find if path possible or not.
+
+→ This traversal is like going to the end of one path if the path ends, you take the ending node and return back the same path and finding other end points. 
+
+```cpp
+/* 
+Time Complexity: o(N+2E) Space Complexity:  o(2N) + o(N) stack memeory
+*/
+
+void dfs_algo(vector<int> adj[], vector<int> &dfs_output, vector<int> &visited, int node){
+    visited[node] = 1;
+	    dfs_output.push_back(node);           // NO POP STEP
+    
+    for(auto it: adj[node]){
+        if(!visited[it]){
+            dfs_algo(adj, dfs_output, visited, it);   // PUSH STEP IN FORM OF RECURSION
+						
+        }
+    }
+}
+
+vector<int> dfsOfGraph(int v, vector<int> adj[]) {
+		// 2 data structures are used here, third data structure(stack) replaced by recursion.
+    vector<int> dfs_output;
+    vector<int> visited(v, 0);
+    
+    for(int i = 0; i < v; i++){
+        if(visited[i] == 0) dfs_algo(adj, dfs_output, visited, i);
+				// there is no use of marking here visited. You have to mark
+				// in the base case of visited. think why? clear reason exist.
+    }
+    
+    return dfs_output;
+}
+```
+
+---
+
+### 3. Grid_Traversal
+
+- In grid there is no adj_list or neighbor list. We replace adj portion/nbr portion of the code by the following code snippet usually.
+    - IF 4 DIRECTIONS ARE ALLOWED
+        
+        ```cpp
+        int x = ...
+        int y = ...
+        
+        int delx[] = { -1, 0, 1, 0};
+        int dely[] = { 0,  1, 0, -1};
+        
+        for(int k = 0; k < 4; k++){
+        	int xnew = x + delx[k];
+        	int ynew = y + dely[k];
+        	
+        	if(xnew >= 0 && xnew <= n-1 && ynew>= 0 && ynew <= m-1 && ... some other condition){
+                
+                ...
+           }
+        }
+        ```
+        
+    - IF 8 DIRECTIONS ARE ALLOWED
+        
+        ```cpp
+        int x = ...
+        int y = ...
+        
+        int delx[] = { -1, 0, 1};
+        int dely[] = { -1, 0, 1};
+        
+        for(int i = 0; i < 3; i++){
+        	for(int j = 0; j < 3; j++){
+        			int xnew = x + delx[k];
+        			int ynew = y + dely[k];
+        			
+        			if(xnew >= 0 && xnew <= n-1 && ynew>= 0 && ynew <= m-1 && ... some other condition){
+        		        
+        		        ...
+        		   }
+        	}
+        }
+        ```
+        
+
+DFS
+
+- In dfs either write condition as base case and call multiple recursion or with no base case and limiting recursion call.
+
+```cpp
+// Approach 1  -> Remvove edge cases using base case.
+void dfs(vector<vector<char>>& grid, vector<vector<int>> &visited, int i, int j){
+        if(i < 0 || i >= grid.size() || j < 0 || j >= grid[0].size() ||
+        visited[i][j] == 1 || grid[i][j] == '0') return;
+
+        visited[i][j] = 1;
+
+        dfs(grid, visited, i+1, j);
+        dfs(grid, visited, i-1, j);
+        dfs(grid, visited, i, j+1);
+        dfs(grid, visited, i, j-1);
+    }
+
+// Approach 2 -> Remove edge case while calling recurssion.
+							// Funny thing to note that limited loops can also act as a base case.
+
+void dfs(vector<vector<int>>& grid, vector<vector<int>> &visited, int row, int col){
+        visited[row][col] = 1;
+
+        int n = grid.size();
+        int m = grid[0].size();
+
+        int delrows[] = {1, 0, -1, 0};
+        int delcols[] = {0, 1, 0, -1};
+
+        for(int ind = 0; ind < 4; ind++){
+            int nextrow = row + delrows[ind];
+            int nextcol = col + delcols[ind];
+
+            if(nextrow >= 0 && nextrow <= n-1 && nextcol >= 0 && nextcol <= m-1 && 
+            !visited[nextrow][nextcol] && grid[nextrow][nextcol] == 1){
+                dfs(grid, visited, nextrow, nextcol);
+            }
+        } 
+    }
+```
+
+BFS
+
+```cpp
+int bfs(vector<vector<int>>& grid, queue<pair<pair<int, int>, int>> &q, vector<vector<int>> &visited){
+
+        int min_time = 0;
+
+        while(!q.empty()){
+            
+            // step 3 popping front 
+            int temp_row = q.front().first.first;
+            int temp_col = q.front().first.second;
+            int temp_time = q.front().second;
+            
+            min_time = max(min_time, temp_time);
+
+            q.pop();
+
+            //step 3 pushing neighbor
+            int delrow[] = {1, 0, -1, 0};
+            int delcol[] = {0, 1, 0, -1};
+
+            for(int ind = 0; ind < 4; ind++){
+                int newrow = temp_row + delrow[ind];
+                int newcol = temp_col + delcol[ind];
+
+                if( newrow < 0 || newrow >= grid.size() || newcol < 0 || newcol >= grid[0].size() ||
+                visited[newrow][newcol] == 1 || grid[newrow][newcol] == 0) continue;
+
+                else{
+                    q.push({{newrow, newcol}, temp_time+1});
+                    visited[newrow][newcol] = 1;
+                }
+            }
+
+        }
+
+        return min_time;
+    }
+```
+
+---
+
+## BiPartite Graph
+
+→ Graph whose all nodes can be colored with alternate colors (no two adjacent color is same).
+
+→ Graph with odd cycle length are not bipartite. Else all other type of graph are bipartite. (We dont use this logic in code to check bipartite. We literally color the graph and check bcz there is only one way to color it(considering exact color name don’t matter).
+
+### BFS
+
+→ **Time Complexity:** o(n+2e) same as trasversal
+
+**Logic:** intialised visited array with -1. various values of visited array:
+-1  -> not visited and not colored.
+0   -> visited and colored with type 0 color.
+1   -> visited and colored with type 1 color.
+
+→ do bfs on the graph and color the neighbour while visiting in opposite of their parent. If you get a neighbour which is already visited, check its color. If it is not opposite of its parent color, then the graph is not bipartite.
+
+```cpp
+class Solution {
+public:
+    bool isBipartite(vector<vector<int>>& graph) {
+        
+        int n = graph.size();
+
+        vector<int> visited(n, -1);
+
+        // two colors 0 & 1
+
+        for(int i = 0; i < n; i++){
+            if(visited[i] == -1){
+                queue<int> q;
+                q.push(i);
+                visited[i] = 0;
+
+                while(!q.empty()){
+                    int temp = q.front();
+                    q.pop();
+
+                    for(auto neigh : graph[temp]){
+                        if(visited[neigh] == -1){
+
+                            q.push(neigh);
+														// here little modification from original bfs
+                            if(visited[temp] == 1) visited[neigh] = 0;
+                            else visited[neigh] = 1;
+                        }
+												// this line is extra from original bfs
+                        else{
+                            if(visited[neigh] == visited[temp]) return false;
+                        }
+                    }
+                }
+
+            }
+        }
+
+        return true;
+    }
+};
+```
+
+---
+
+### DFS
+
+Approach 2 : DFS modification similar to BFS
+
+```cpp
+class Solution {
+public:
+    bool dfs(vector<int> &visited, vector<vector<int>>& graph, int node, int parentColor){
+        visited[node] = !parentColor;
+
+        for(auto it: graph[node]){
+            if(visited[it] == -1){
+                bool res = dfs(visited, graph, it, !parentColor);
+                if(!res) return res;
+            }
+            else{
+                if(visited[it] == !parentColor) return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool isBipartite(vector<vector<int>>& graph) {
+        
+        int n = graph.size();
+
+        vector<int> visited(n, -1);
+
+        // two colors 0 & 1
+
+        for(int i = 0; i < n; i++){
+            if(visited[i] == -1){
+               int res = dfs(visited, graph, i, 0);
+               if(res == false) return res;
+            }
+        }
+
+        return true;
+    }
+};
+```
+
+---
+
+# Cycle Detection
+
+### 1. Undirected Graph
+
+→ Use parent + node as pair.    
+
+BFS/DFS → during pushing neighbor , 1 extra line needed (cycle exist if visited neighbor  is not parent). 
+
+→ Can also be done using Union Find.
+
+BFS
+
+```cpp
+// BFS
+bool isCycle(int v, vector<int> adj[]) {
+    // Code here
+    
+    // step 1
+    
+    vector<int> visited(v, 0);
+    queue<pair<int, int>> q;
+    
+    
+    for(int i = 0; i < v; i++){
+        if(!visited[i]){
+            
+            // step 2
+            q.push({i, -1});
+            visited[i] = 1;
+            
+            // step 3
+            while(q.empty() == 0){
+                int node = q.front().first;
+                int parent = q.front().second;
+                
+                q.pop();
+                
+                for(auto it: adj[node]){
+                    if(!visited[it]){
+                        q.push({it, node});
+                        visited[it] = 1;
+                    }
+                    // cycle detection step -> this is the only extra step from bfs
+                    else if(visited[it] && it != parent) return true;
+                }
+            }
+            
+        }
+    }
+    
+    return false;
+}
+```
+
+DFS
+
+```cpp
+// time complexity -> o(n + 2e) + o(n)   -> write reason, when we add and when we multiply in nested loop
+// DFS
+
+// step 3
+bool dfs(int v, vector<int> adj[], vector<int> &visited, int node, int parent){
+    visited[node] = 1;
+    
+    for(auto it: adj[node]){
+        if(!visited[it]){
+            bool ans = dfs(v, adj, visited, it, node);
+            if(ans == true) return true;
+        }
+        // extra step from dfs- cycle detection step
+        else if(visited[it] && it != parent) return true; 
+    }
+    return false;
+}
+
+bool isCycle(int v, vector<int> adj[]) {
+    // Code here
+    
+    // step 1
+    
+    vector<int> visited(v, 0);
+    
+    
+    // step 2
+    
+    for(int i = 0; i < v; i++){
+        if(!visited[i]){
+            bool ans = dfs(v, adj, visited, i, -1);
+            if(ans) return true;
+        }
+    }
+    
+    return false;
+}
+```
+
+---
+
+## 2. Directed Graph
+
+DFS
+
+→ This algorithm also detects self node cycles.
+
+→ Time Complexity: o(n+e) and not o(n+2e).
+
+Logic: on the same path node has to be visited again for the cycle.
+
+Approach: Along with visited array, we will also carry pathVisited array -> which will contain the exact traversal path from original root to the current node. If we backtrack, we will remove the backtracked node from the pathVisited.
+Now, If a neighbor node is not parent, but do marked in pathVisited already => there is cycle in the graph.
+
+Difference from undirected graph cycle -> if a neighbor node is not parent, but marked in visited array -> cycle exists.
+
+Also, we can combine pathVisited array and visited array by using following marking scheme.
+0 -> not visited.
+1 -> visited only.
+2 -> visited as well as pathVisited.
+
+```cpp
+bool dfs(vector<int> adj[], vector<int>& visited, vector<int>& pathVisited, int node){
+    visited[node] = 1;
+    pathVisited[node] = 1;
+    
+    for(auto it: adj[node]){
+        if(!visited[it]){
+            bool res = dfs(adj, visited, pathVisited, it);
+            if(res) return true;
+        }
+        else{
+            if(pathVisited[it] == 1) return true;
+        }
+    }
+    // backtracking -> note this step. It is most important.
+    pathVisited[node] = 0;
+    return false;
+}
+
+class Solution {
+  public:
+    // Function to detect cycle in a directed graph.
+    bool isCyclic(int V, vector<int> adj[]) {
+        // code here
+        int n = V;
+        vector<int> visited(n, 0);
+        vector<int> pathVisited(n, 0);
+        
+        
+        for(int i = 0; i < n; i++){
+            if(!visited[i]){
+                bool ans = dfs(adj, visited, pathVisited, i);
+                if(ans) return true;
+            }
+        }
+        
+        return false;
+    }
+};
+```
+
+---
+
+### BFS (Using Topo sort)   (read topological sort section to understand it better)
+
+We have to use this because backtracking is not possible in BFS.
+
+**Logic:**       If toposort.size() ≠ total no. of nodes, then there is cycle in graph.
+
+```cpp
+bool isCyclic(int v, vector<int> adj[]) {
+
+	    vector<int> inDegree(v, 0);
+	    queue<int> q;
+	    
+        for(int i = 0; i < v; i++){
+            for(auto it: adj[i]){
+                inDegree[it]++;
+            }
+        }
+        
+        for(int i = 0; i < v; i++){
+            if(inDegree[i] == 0){
+                q.push(i);
+            }
+        }
+        
+        vector<int> topoSort;  // instead of carrying a topoSort, we can also carry only size of toposort array.
+        
+        while(!q.empty()){
+            int temp = q.front();
+            topoSort.push_back(temp);
+            q.pop();
+            
+            for(auto it: adj[temp]){
+                inDegree[it]--;
+                
+                if(inDegree[it] == 0) q.push(it);
+            }
+            
+        }
+        
+        if(topoSort.size() == v) return false;
+        else return true;
+    }
+```
+
+---
+
+# Topological Sort
+
+what is topological sort? →    It is a linear ordering of vertices such that if there is an edge from u to v, u appears before v in that ordering.
+
+CAN BE DONE ONLY ON DAG (THINK WHY DIRECTED AND NO CYCLE -> VERY EASY).
+
+**Algorithm Overview of DFS and BFS:**
+
+[toposort.pdf](https://prod-files-secure.s3.us-west-2.amazonaws.com/8416e69f-bcd7-4eb5-802c-498d0dda4d36/fcb33979-75ee-4141-813f-bdb3aebc326f/toposort.pdf)
+
+**When to use**: 
+
+Topological Sort pattern is very useful for finding a linear ordering of elements that have dependencies on each other. Scheduling or grouping problems which have dependencies between items are good examples to the problems that can be solved with using this technique.
+
+**What to use(BFS or DFS):**
+
+[BFS or DFS TOPOSORT.pdf](https://prod-files-secure.s3.us-west-2.amazonaws.com/8416e69f-bcd7-4eb5-802c-498d0dda4d36/6e216a17-fb01-4621-a5e9-f4b7669cce16/BFS_or_DFS_TOPOSORT.pdf)
+
+### DFS
+
+Time Complexity: o(n + e)       Space Complexity(2 * n)
+**Alogrithm:** 
+
+→ Stack will store the topological sorted arrangement of nodes.  Only one extra line from dfs traversal i.e. pushing in stack at last of the recursion part.
+
+→ why pushing the node in the stack while backtracking? because it reverses the backtracking order thus forming topological(directional) order.
+
+```cpp
+	void dfs(int node, vector<int> adj[], stack<int> &topo_stk, vector<int> &visited){
+	    visited[node] = 1;
+	    
+	    for(auto neigh: adj[node]){
+	        if(!visited[neigh]){
+	            dfs(neigh, adj, topo_stk, visited);
+	        }
+	    }
+	    // to understand below line at the end of dfs, think like what should happen 
+			// if there are no neighbour.
+
+			// only extra line from dfs traversal.
+	    topo_stk.push(node);             
+	}
+    
+
+	vector<int> topoSort(int v, vector<int> adj[]) 
+	{
+	    vector<int> visited(v, 0);
+	    stack<int> topo_stk;
+	    
+	    for(int i = 0; i < v; i++){
+	        if(!visited[i]){
+	            dfs(i, adj, topo_stk, visited);
+	        }
+	    }
+	    
+	    
+	    // putting the results from stack to vector.
+			// ans have direction  -------> this way.
+	    vector<int> ans;
+      while(!topo_stk.empty()){
+            ans.push_back(topo_stk.top());
+            topo_stk.pop();
+      }
+	    
+	    return ans;
+	}
+```
+
+---
+
+### BFS (also called Kahn’s Algorithm)
+
+Instead of visited, Indegree is used in similar fashion.
+
+Algorithm:
+
+1. First calculate indegree of every node (equivalent to visited creation → just way to remember) and queue data structure.
+2. Intialize the queue data structure with node with indegree == 0.
+3. while queue is not empty, pop the front to result, while reducing the indegree of its neighbours by 1. If any neighbor indegree becomes 0 in the process, push it in the queue.
+
+```cpp
+vector<int> topoSort(int v, vector<int> adj[]) 
+	{
+	    vector<int> inDegree(v, 0);
+			// QU
+	    queue<int> q;
+	    
+			// first write indegree of every node
+      for(int i = 0; i < v; i++){
+            for(auto it: adj[i]){
+                inDegree[it]++;
+            }
+      }
+      
+			// initiate the queue with node having 0 indegree. It will always have a 0 indegree.
+			// otherwise graph will contain cycle (not possible because of DAG).
+  
+      for(int i = 0; i < v; i++){
+            if(inDegree[i] == 0){
+                q.push(i);
+            }
+      }
+	      
+	    vector<int> topo_sort;
+	    
+	    while(!q.empty()){
+	        int temp = q.front();
+					q.pop();
+	        topo_sort.push_back(temp);
+	        
+	        
+	        for(auto it: adj[temp]){
+	            inDegree[it]--;
+	            
+	            if(inDegree[it] == 0) q.push(it);
+	        }
+	        
+	    }
+	    
+	    return topo_sort;
+	}
+```
+
+---
+
+# Shortest Distance
+
+When we have to find shortest distance in undirected graph (equal weighed edges) , usually we use BFS.
+
+→ when doing relaxation, we don’t need visited array.
+
+---
+
+### **Difference between BFS and Dijkstra Algorithm**
+
+- BFS: path with the smallest number of edges (assuming the same weight for every edge or no weight).***
+- Dijkstra: path with the smallest weight along the path**
+
+---
+
+## 1. BFS
+
+1. shortest distance to every node from source node
+2. each edge have unit weight / equal weight.
+3. in directed or undirected graph.
+
+→ Time complexity:  O( V+E)
+
+→ logic : Just count how many layers after each node is present. Each node represent one layer.
+
+→ Simple BFS should be used to count layers. Just use a vector distance and store which layer the particular node comes in w.r.t source.
+
+→ no relaxation needed.
+
+```cpp
+vector<int> shortestPath(vector<vector<int>>& edges, int n,int m, int src){
+        // code here
+        
+        // create adjacency list
+        vector<int> adj[n];
+        
+        for(int i = 0; i < m; i++){
+            adj[edges[i][0]].push_back(edges[i][1]);
+            adj[edges[i][1]].push_back(edges[i][0]);
+        }
+        
+        
+        
+        // step 1 creating data structure
+        vector<int> visited(n, 0);
+        queue<int> q;
+        vector<int> distance(n, 1e9);
+        
+        
+        // step 2 initialising queue
+        q.push(src);
+        distance[src] = 0;
+        
+        visited[src] = 1;
+        
+ 
+        // step3 pop & push
+        while(!q.empty()){
+            int node = q.front();
+            q.pop();
+            
+            for(auto neigh: adj[node]){
+                if(!visited[neigh]){
+                    
+                    q.push(neigh);
+                    // no need of relaxation here,  counting layers is enough.
+                    distance[neigh] = distance[node] + 1;
+                    visited[neigh] = 1;
+                }
+            }
+        }
+        
+        // to deal with separate components.
+        for(int i = 0; i<n; i++){
+            if(distance[i] == 1e9) distance[i] = -1;
+        }
+        return distance;
+    }
+```
+
+## 2. using Topological sort
+
+1. In directed acyclic graph (because toposort is only possible in DAG).
+
+→ Do relaxation in topological order. makes sense think.
+
+```cpp
+// cant do bfs as previous since all the edges dont have unit weight. 
+// So bfs can't be applied.
+/*
+Approach:Steps      1. Do toposort
+                    2. Do relaxation in toposort order
+*/
+
+void dfs(int node, vector<pair<int, int>> adj[], vector<int>& visited, stack<int>& stk){
+    visited[node] = 1;
+    
+    for(auto it: adj[node]){
+        int neigh = it.first;
+        if(!visited[neigh]) dfs(neigh, adj, visited, stk);
+    }
+    
+    stk.push(node);
+}
+
+ vector<int> shortestPath(int n,int M, vector<vector<int>>& edges){
+    
+    // create adj list of weighted graph add this in graph notes.
+    vector<pair<int, int>> adj[n];
+    for(int i = 0; i< M; i++){
+        int first = edges[i][0];
+        int second = edges[i][1];
+        int weight = edges[i][2];
+        
+        
+        adj[first].push_back({second, weight});
+    }
+    
+    
+    // create data streuctures
+    vector<int> visited(n, 0);
+    stack<int> stk;
+    
+    for(int i = 0; i < n; i++){
+        if(!visited[i]){
+            dfs(i, adj, visited, stk);
+        }
+    }
+    
+    
+    
+    // pop out the stk till you reach the source node
+    while(stk.top() != 0){
+        stk.pop();
+    }
+    
+    // relaxation in toposort order
+    vector<int> distance(n, 1e9);
+    distance[0] = 0;
+    
+    while(!stk.empty()){
+        int parent_node = stk.top();
+        stk.pop();
+        
+        for(auto it: adj[parent_node]){
+            int neigh = it.first;
+            int weight = it.second;
+            
+            
+            // relaxation part
+            // this logic will not be satisfied by separate component w.r.t source so separate
+            // component will not be relaxed. We will deal with them in the last.
+            if(distance[neigh] > distance[parent_node] + weight){
+                distance[neigh] = distance[parent_node] + weight;
+            }
+        }
+    }
+    
+    // for separate component nodes
+    for(int i = 0; i < n; i++){
+        if(distance[i] == 1e9) distance[i] = -1;
+    }
+    
+    return distance;
+    
+}
+```
+
+---
+
+## 3. using Dijkstra’s Algorithm
+
+- Shortest distance to every node from source node
+
+- having non-negative edge weight
+
+- Negative edge weights (Wrong Answers) or negative cycles (TLE)
+- Can be used on directed and undirected graph
+    
+    → traversal gets limited by the fact that relaxation of the node is possible or not. Not by if the node is visited or parent.
+    
+
+- Distance array is used instead of visited array. (distance array limits traversal instead of visited (gets limited by lesser distance than previous).
+
+- we don’t keep visited here since we have to do relaxation in all possible path repeatedly.
+
+→ Dijkstra  is BFS WITH RELAXATION. also relaxation is done to all possible neighbors/relaxation. 
+
+→ Priority queue or set both can be used instead of queue. Also queue can be used but it is inefficient since we want greedy approach and want to relax the nodes with smallest distance first.
+
+```cpp
+// Method 1 -> Using priority Queue    
+// T.C - (E * log E)  -> log E since maximum E edges can be put in  pq. 
+// also (v^2 log E)   -> more easy to understand. v^2 = E.
+
+ vector <int> dijkstra(int v, vector<vector<int>> adj[], int s)
+    {
+        // Code here
+        vector<int> distance(v, 1e9);
+        
+        distance[s] = 0;
+        
+        priority_queue< pair<int, int>, vector<pair<int, int>>,  greater<pair<int,int>> > pq;
+        
+        // pair (distance, source)  -> keep distance first since set is sorted by pair.first by default.
+        pq.push({0, s});
+        
+        while(!pq.empty()){
+            
+            pair<int, int> temp = pq.top();
+            pq.pop();
+            
+            int parentDist = temp.first;
+            int parentNode = temp.second;
+            
+            
+            for(auto neigh : adj[parentNode]){
+                
+                int neighNode = neigh[0];
+                int neighWeight = neigh[1];
+                
+                // relaxation step
+                if(distance[neighNode] > parentDist + neighWeight){
+                    
+                    distance[neighNode] = parentDist + neighWeight;
+                    pq.push({distance[neighNode], neighNode});
+                }
+            }
+            
+        }
+        
+        return distance;
+    }
+```
+
+```cpp
+// Method 2 -> Using Set
+
+vector <int> dijkstra(int v, vector<vector<int>> adj[], int s)
+    {
+        // Code here
+        vector<int> distance(v, 1e9);
+        
+        distance[s] = 0;
+        
+        
+        // pair (distance, source)  -> keep distance first since set is sorted by pair.first by default.
+        set<pair<int,int>> st;
+        
+        st.insert({0, s});
+        
+        while(!st.empty()){
+            
+            pair<int, int> temp = *(st.begin());
+            st.erase(temp);
+            
+            int parentDist = temp.first;
+            int parentNode = temp.second;
+            
+            
+            for(auto neigh : adj[parentNode]){
+                
+                int neighNode = neigh[0];
+                int neighWeight = neigh[1];
+                
+                // relaxation step
+                if(distance[neighNode] > parentDist + neighWeight){
+                    
+                    // erase if existed  -> only benefit of using set instead of pq.
+                    if(distance[neighNode] != 1e9){
+                        st.erase({distance[neighNode], neighNode});
+                    }
+                    
+                    distance[neighNode] = parentDist + neighWeight;
+                    st.insert({distance[neighNode], neighNode});
+                }
+            }
+            
+        }
+        
+        return distance;
+    }
+```
+
+### Print shortest path
+
+- This code gives only single shortest path
+- Shortest path is traced backward by using parent node. Parent node is that node by which nbr node is relaxed for shortest distance.
+- Algorithm : Same as dijkstra, just add a parent vector extra to keep track of parent.
+
+```cpp
+    vector<int> shortestPath(int n, int m, vector<vector<int>>& edges) {
+        // Code here
+        
+        
+        // adjaceny list creation
+        vector<pair<int,int>> adjList[n+1];
+        for(auto it: edges){
+            adjList[it[0]].push_back({it[1], it[2]});
+            adjList[it[1]].push_back({it[0], it[2]});  
+        }
+        
+        int src = 1, dest = n;
+        
+        // creating data structure
+        vector<int> distance(n+1, 1e9);
+        vector<int> parent(n+1, -1);
+        
+        priority_queue< pair<int,int>, vector<pair<int,int>>, greater<pair<int,int>> > pq;
+
+        // pair (distance, node)
+        pq.push({0, 1});
+        distance[1] = 0;
+        
+        while(!pq.empty()){
+            
+            pair<int,int> temp = pq.top();
+            pq.pop();
+            
+            int dist = temp.first;
+            int node = temp.second;
+            
+            // relaxation
+            for(auto it: adjList[node]){
+                
+                int nbr_node = it.first;
+                int weight = it.second;
+                
+                if(distance[nbr_node] > dist + weight){
+                    
+                    distance[nbr_node] = dist + weight;
+                    pq.push({distance[nbr_node], nbr_node});
+                    
+                    // this is the extra step from dijkstra. store parent
+                    parent[nbr_node] = node;
+                }
+            } 
+        }
+        
+        // getting path using parent
+        vector<int> ans;
+        int node = n;
+        
+        while(node != -1){
+            ans.push_back(node);
+            node = parent[node];
+        }
+    
+        reverse(ans.begin(), ans.end());
+				return ans;        
+    }
+```
+
+---
+
+## Bellman Ford Algorithm
+
+- Get shortest distance from a single source point to all other vertices.
+- Used with negative weights also.
+
+- Able to find whether graph has negative cycle
+
+- Run this algo one more time if a negative cycle check is required. If there is any updation in any of the  shortest distance then the graph has a negative cycle.
+- Not preferred over Dijkstra as time complexity of bellman ford is O(VE)
+- Is  brute force algorithm for shortest distance.
+
+Logic:   v-1 times relaxation is done to distance vector.
+
+Algorithm: 
+
+- We have to do v-1 time relaxation of the distance using the edge list (no need to create adj List or matrix).
+    
+    Relaxation is done to v-1 times because src is already given minimum distance and in worst case v-1 loop of the edge list is required for relaxation of all possible. 
+    
+- Relaxation is not done to the unreachable nodes in a given node (1e9 valued node). It may be possible that in each loop we can only relax one vertex using vertex relaxed in the  previous iteration.
+
+- Early Stop -> If there is no relaxation in any iteration before v-1 iteration, we can stop. All the edges are already relaxed before v-1 iteration.
+    
+    Using Early Stop greatly reduces time taken to run algo. It is not trivial.
+    
+
+```cpp
+vector<int> bellman_ford(int V, vector<vector<int>>& edges, int src) {
+        
+      vector<int> distance(V, 1e8);
+      distance[src] = 0;
+      
+      for(int i = 0; i < V-1; i++){
+          
+          // bool early_stop = true;     makes code lot more faster
+          
+          // relaxation
+          for(auto it: edges){
+              if(distance[it[0]] != 1e8  && distance[it[0]] + it[2] < distance[it[1]]){
+                  distance[it[1]] = distance[it[0]] + it[2] ;
+                  
+                  // early_stop = false;
+              }
+          }
+          // if(early_stop) break;
+        } 
+        
+        //---------------------------------------------------------------------- 
+        // OPTIONAL
+        // To check negative cycle - do one more time relaxation
+        for(auto it: edges){
+            if(distance[it[0]] != 1e8  && distance[it[0]] + it[2] < distance[it[1]]){
+						      cout << "negative cycle exist" ;
+            }
+        //----------------------------------------------------------------------
+            
+        return distance;
+    }
+```
+
+---
+
+## Flyod Warshall Algorithm
+
+- Used to find shortest distance path from each vertex to every other verrtex.
+- Time Complexity is O(V^3)
+
+- Does it by triple nested loop realaxation of the matrix.
+
+- It prefers adjacency matrix over adjacency list
+- Brute force algorithm for the shortest distance.
+- Run this algo one more time if a negative cycle check is required. If the shortest distance of a vertex is reduced, then the graph has a negative cycle.
+- **Check negative cycle:**     After completing all the relaxation step, if any of the diagonal position of the distance matrix is negative (instead of 0), negative cycle exits.
+
+LOGIC :  check every possible path for reaching a vertex via all intermediatory vertex possilbe and find the minimum among them. ( done by using k as itermediatory and minimum found using relaxation).
+
+Algorithm :
+
+1. First create a distance matrix and fill it with intial values.
+    1. All the diagonal position should be filled with 0 ( since distance to itself is 0).
+    2. Fill all other positions using edge_weight List(i, j, weight) or adjList or adjMatrix.
+2. Update the distance matrix with multiple relaxation.
+    1. for shortest distance between (i and j)  = distance[i][j] → distance[i][via] + distance[via][j].
+
+```cpp
+vector<vector<int>> Flyod_warshall_algo(int n, vector<vector<int>>& edges) {
+        
+        // create the distance matrix and fill the itital values.
+        vector<vector<int>> distance(n, vector<int>(n, 1e9));
+
+        for(int i = 0; i < n; i++){
+            distance[i][i] = 0;
+        }
+
+        for(auto it : edges){
+            distance[it[0]][it[1]] = it[2];
+            distance[it[1]][it[0]] = it[2];
+        }
+
+        // update the distance matrix using multiple relaxation     
+        // k is via
+        
+        for(int k = 0; k < n; k++){
+            for(int i = 0; i < n; i++){
+                for(int j = 0; j < n; j++){
+                    
+                  if(distance[i][j] < distance[i][k] + distance[k][j]){
+                       distance[i][j] = distance[i][k] + distance[k][j];
+                   }
+                }
+            }
+        }
+				
+				//---------------------------------------------------------
+				// OPTIONAL
+				// TO Check negative cycle
+				for(int i = 0; i < n; i++){
+					if(distance[i][i] < 0) cout << "negative cycle exist";
+				}
+				//-----------------------------------------------------------
+				
+				
+        return distance;
+        }
+```
+
+---
+
+# Minimum Spanning Tree
+
+- Spanning Tree →        A tree in which we have n nodes and n-1 edges and there is path for each node to every other node.
+- Weight of Spanning Tree  →      sum of the weights of the spanning tree.
+- Minimum Spanning Tree  →      Spanning tree which have minimum sum of weight of edges.
+- A graph can have multiple spanning trees and may also have multiple minimum spanning tree (with a particular weight of spanning tree).
+
+Difference between approaches of Prims Algorithm and Krushkal Algorithm to find MST:
+
+Both have greedy approach to find MST by choosing minimum weight edge first and trying to visit all the nodes once, diffrence lies between how we are creating edge set among which we are choosing minimum.
+
+- Prims algorithm is similar to Dijkstra, but instead of relaxing other nodes, we are choosing an edge and including its nodes in MST.  (Also there is difference between when to mark visited).
+- Unlike Prims, In krushkal algorithm we have the whole list of edges and its weight at start and we start choosing minimum from exhaustive list of edges and try to visit all nodes.
+
+---
+
+## 1. Prims Algorithm (MST)
+
+- Used to find minimum spanning tree of a graph.
+- Both Prims and Krushkal algorithm can only be applied on **undirected graph** to find MST (since prim’s algorithm assumes that all vertices are connected. But in a directed graph, every node is not reachable from every other node)
+- Is a greedy approach in the sense we include minimum weight edge first **similar to Dijsktra , but instead of relaxing other nodes, we are choosing an edge and including its nodes in MST.**  (Also there is difference between when to mark visited).
+    - In bfs , when we push the element inside a queue we mark it as visited because that element will be picked up later for sure (algorithm ends only when the queue is empty).
+    But in MST case even if we push the edge into pq , theres no surety that the edge will be picked up.
+    - Pushing in PQ dont ensure it will be picked, so dont mark visited as soon as you push. Mark visited only when it is top of PQ.
+- Time Complexity : E log E  (ElogE + ElogE)
+
+```cpp
+int Prims_Algorithm(int V, vector<vector<int>> adj[])
+    {
+        // results
+        
+        int sum = 0;                          // storing min weight
+        vector<pair<int,int>> mst;            // storing edges of mst
+        
+        // data structures
+        vector<int> included_inMST(V, 0);     // can be called visited
+        
+        // If edges needn't be stored, we do not need to store parent.
+        // weight, node, parent
+        priority_queue<pair<int,pair<int,int>>, vector<pair<int, pair<int,int>>>, greater<pair<int, pair<int,int>>> > pq;
+        pq.push({0, {0, -1}});  
+        
+        // dont mark it visited here because it may not be picked(in general).
+        
+        // E 
+        while(!pq.empty()){
+		        
+		        // log E
+            auto temp = pq.top();
+            pq.pop();
+            int weight = temp.first, node = temp.second.first, parent = temp.second.second;
+            
+            
+            if(included_inMST[node] == 1) continue;
+            sum += weight;
+            if(parent != -1) mst.push_back({node, parent});
+            included_inMST[node] = 1;
+            
+            // overall E log E times
+            for(auto nbr : adj[node]){
+                if(!included_inMST[nbr[0]]){
+                    pq.push({nbr[1], {nbr[0], node}});
+                    // dont mark it visited here because it may not be picked(in general).
+                }
+            }
+        }
+        return sum;
+        
+    }
+```
+
+---
+
+## 2. Krushkal Algorithm (MST)
+
+- Very easy to understand and most intuitive greedy algorithm to find MST in undirected graph.
+- Algorigthm
+    1. first create all the edge list and sort it in ascending order.
+    2. Create a disjoint set of multiple components ( total v components).
+    3. Then take the smallest weight edge and check if its node are already joined to form mst(using find ultimate parent) . If yes continue, if not join them using union.
+    4. Repeat the process till we get single component.
+
+```cpp
+
+int spanningTree(int V, vector<vector<int>> adj[])
+    {
+       
+       // first create edge list
+       // creating edge list this way creates duplicates, but we dont face any problem
+       // since disjoint set doesnt get affected by duplicates.
+       vector<pair<int, pair<int,int>> > edges;             // weight, node, node
+       
+       for(int i = 0; i < V; i++){
+           for(auto it: adj[i]){
+ 
+               edges.push_back({it[1], {i, it[0]}});
+           }
+       }
+       
+       // sort the edge list according to the weight
+       sort(edges.begin(), edges.end());
+       
+       int sum = 0;
+       
+       DisjointSet ds(V);
+       
+       for (auto it: edges){
+           int node1 = it.second.first;
+           int node2 = it.second.second;
+           int weight = it.first;
+           
+           if(ds.findUPar(node1) != ds.findUPar(node2)){
+               
+               ds.unionBySize(node1, node2);
+               sum += weight;
+           }
+       }
+    
+        return sum;
+    }
+```
+
+---
+
+# Disjoint Set (Union & Find)
+
+- It is a custom data structure. (not available in c++ stl that why we have to make it)
+- Used to check if two nodes are in same component or not in almost constant time (BFS/ DFS traversal takes linear time for the same).
+- can also check the same even in dynamic graphs (graphs which is continuously created and hence changing).
+- Structure of nodes created with disjoint set is different from original graph. The whole purpose of the disjoint set structure is to find if two nodes are in same component or not (and not to show relation between nodes and edges.)
+- Have two functions:
+    - Union (implemented by either using size or rank).
+        - Calling union of two nodes merges parents of the two nodes + Updates the parent of the called two nodes & groups.
+        - Hence, No need to merge their parents specifically. It will be done automatically. Also dont change parent by yourself while merging (no need). Merge function does it automatically.
+    - Find Ultimate parent.
+- In union we just make any element leader of any group and make other elements as a group member. In find, we try to find if the element is in the group or not.
+- Time complexity for union or finding ultimate parent  is O (4 * alpha) which is almost constant time. Hence the whole data structure has time complexity of O (4* alpha).
+
+Rank 
+
+- It means how many nodes are beneath it (similar to height). (hence initialised with 0). A minor diffrence between rank and height is rank doesn’t decreases even we rearrange its childs (path compression).
+
+Path Compression
+
+- If we dont do path compression, finding ultimate parent will take log N time. Doing path compression makes it constant time.
+- This means that parent array don’t always store the “just above parent”, but may store the ultimate parent for some of the nodes.
+
+Algorithm for Union of u & v:
+
+(Find Ultimate parent → Do Ultimate parent size comparision → connect)
+
+1. Find ultimate parent of u & v. (find operation)
+    - if ultimate parent same then no need of union, if different then proceed further.
+    - If the node’s parent is node itself, that node itself is the ultimate parent.
+2. Find ranks/size of ultimate parents of u & v.
+    - By finding this we are trying to find which component is smaller and which is larger.
+3. Always connect smaller rank ultimate parent of u to larger rank ultimate parent of v. 
+    - Note that we are not connecting u & v but ult_parent_u  and ult_paernt_v.
+    - Adding smaller to larger ensures that tree remains balanced and there is less nodes to traverse if we want to find later ult_parent of a node.
+
+```cpp
+// DISJOINT SET WITH MERGING WITH SIZE.
+// WORKS WITH EVERY TYPE OF QUESTION ON DISJOINT SET.
+
+class DisjointSet {
+     
+public: 
+		vector<int>  parent, size;
+
+	    DisjointSet(int n) {
+	        size.resize(n, 1); 
+	        parent.resize(n);
+	        for(int i = 0;i<n;i++) {
+	            parent[i] = i; 
+	        }
+	    }
+
+	    int find(int node) {
+	        if(node == parent[node])
+	            return node;
+	        return parent[node] = find(parent[node]); 
+	    }
+	
+	
+	    void merge(int u, int v) {
+	        int ulp_u = find(u); 
+	        int ulp_v = find(v); 
+	        if(ulp_u == ulp_v) return; 
+	        
+	        if(size[ulp_u] < size[ulp_v]) {
+	            parent[ulp_u] = ulp_v; 
+	            size[ulp_v] += size[ulp_u]; 
+	        }
+	        else {
+	            parent[ulp_v] = ulp_u;
+	            size[ulp_u] += size[ulp_v]; 
+	        }
+	    }
+};
+```
+
+---
+
+CASES (how to write merge function)
+
+1. Dont write size and merge with anyone. (usual case)
+    - When group size is not required and who remains parent after merging doesn’t matter.
+2. Write size but merge with anyone.
+    - When group size is required but merging whom with whom doesn’t matter.
+3. Write size and merge smaller with larger. (safest case. works with every code)
+    - when ultimate parent after merging should be consistent.
+    - ex : https://www.geeksforgeeks.org/problems/number-of-islands/1?utm_source=youtube&utm_medium=collab_striver_ytdescription&utm_campaign=number-of-islands
+- If you not write the code with size , parent will be random while merging so when you store unique parents in the set , you may get two parents representing sam group(one before merging, one after merging). To avoid this, merge by size.
+
+```cpp
+// SHORTEST CODE WHEN 
+// 1. GROUP SIZE IS NOT REQUIRED.   
+// 2. WHICH GROUP REMAINS PARENT AFTER MERGING DOESN'T MATTER.
+
+class DisjointSet{
+    public:
+    vector<int> parent;
+
+    DisjointSet(int n){
+        parent.resize(n);
+        for(int i = 0; i < n; i++) parent[i] = i;
+    }
+
+    int find(int node){
+        if(node == parent[node]) return node;
+        else return parent[node] = find(parent[node]);
+    }
+
+    void merge(int a, int b){
+        if(find(a) == find(b)) return;
+        else{
+            parent[find(a)] = find(b);
+        }
+    }
+};
+```
+
+```cpp
+// EXPLANATION OF DISJOINT SET CODE AND MERGING THE CODE WITH RANK ALSO
+#include <bits/stdc++.h>
+using namespace std;
+
+class DisjointSet {
+     
+public: 
+			vector<int> rank, parent, size;
+		
+			// using n+1 as size because it can accomodate both 0 based indexing 
+			// and 1 based indexing for n vertices.
+			
+			// constructor
+	    DisjointSet(int n) {
+	         
+	        // among these two, only one is used(by choice).
+	        rank.resize(n+1, 0);
+	        size.resize(n+1, 1); 
+	        
+	        parent.resize(n+1);
+	        for(int i = 0;i<=n;i++) {
+	            parent[i] = i; 
+	        }
+	    }
+	    
+	
+	    int findUPar(int node) {
+	        if(node == parent[node])
+	            return node;
+	        // this line also do path compression because of parent[node] 
+	        return parent[node] = findUPar(parent[node]); 
+	    }
+	
+	    void unionByRank(int u, int v) {
+			    
+			    // find ultimate parent to check if they are in same component (in that case no need of union)
+	        int ulp_u = findUPar(u); 
+	        int ulp_v = findUPar(v);
+	        if (ulp_u == ulp_v) return;    
+	        
+	        // smaller component(by rank) gets added to larger component.
+	        if(rank[ulp_u] < rank[ulp_v]) {
+	            parent[ulp_u] = ulp_v; 
+	        }
+	        else if(rank[ulp_v] < rank[ulp_u]) {
+	            parent[ulp_v] = ulp_u; 
+	        }
+	        else {
+	            parent[ulp_v] = ulp_u; 
+	            rank[ulp_u]++; 
+	        }
+	    }
+	
+	    void unionBySize(int u, int v) {
+	        int ulp_u = findUPar(u); 
+	        int ulp_v = findUPar(v); 
+	        if(ulp_u == ulp_v) return; 
+	        
+	        if(size[ulp_u] < size[ulp_v]) {
+	            parent[ulp_u] = ulp_v; 
+	            size[ulp_v] += size[ulp_u]; 
+	        }
+	        else {
+	            parent[ulp_v] = ulp_u;
+	            size[ulp_u] += size[ulp_v]; 
+	        }
+	    }
+}; 
+
+// using the disjoint set
+int main() {
+    DisjointSet ds(7);
+    ds.unionBySize(1, 2); 
+    ds.unionBySize(2, 3); 
+    ds.unionBySize(4, 5); 
+
+	return 0;
+}
+```
+
+---
+
+Finding total Number of ultimate parents in the disjoint set
+
+```cpp
+    // finding total find_Uparents.
+    int count = 0;
+    for(int i = 0; i < n; i++){
+        if(ds.parent[i] == i) count++;
+    }
+```
+
+---
+
+### Using Disjoint set in grid Questions:
+
+1. Usually we consider each cell of the grid as a individual disjoint node intially and then we try to group them together. Node id will be → m*x + y in that case.
+2. Sometimes we have to find number of unique groups arround the cell. In that case we use set which stores ultimate parent of the nbr cells. We can use ultimate parent around the cells in many ways according to the question.
+    - Sometimes we have to merge the cell with the one nbr group before moving to the cecking the othe nbr. In that case always merge smaller group with the larger, otherwise parent of the same group will continuously change and we can have multiple parents of the same group in the set.
+    - In other words, If you not write the code with size , parent will be random while merging so when you store unique parents in the set , you may get two parents representing same group(one before merging, one after merging). To avoid this, merge by size.
+
+sample question illustrating both the points → https://www.geeksforgeeks.org/problems/number-of-islands/1?utm_source=youtube&utm_medium=collab_striver_ytdescription&utm_campaign=number-of-islands
+
+```cpp
+ 
+ vector<int> numOfIslands(int n, int m, vector<vector<int>> &operators) {
+        // code here
+        
+        vector<vector<int>> matrix(n, vector<int>(m, 0));
+        
+        DisjointSet ds(m*n);
+        
+				...
+        
+        for(int i = 0; i < operators.size(); i++){
+            int x = operators[i][0];
+            int y = operators[i][1];
+            
+						...
+
+            int node = m*x + y;
+            
+            int delx[] = {-1, 0, 1, 0};
+            int dely[] = {0,  1, 0, -1};
+            
+            set<int> st;
+            
+            for(int ind = 0; ind < 4; ind++){
+                int xnew = x + delx[ind];
+                int ynew = y + dely[ind];
+     
+                if(xnew >= 0 && xnew < n && ynew >= 0 && ynew < m 
+                  && matrix[xnew][ynew] == 1){
+
+                    st.insert(ds.find(m*xnew + ynew));
+                    ds.merge(m*xnew + ynew, m*x + y);
+                    
+                }
+            }
+            
+						...
+
+        }
+
+        return ans;
+        
+    }
+```
+
+---
